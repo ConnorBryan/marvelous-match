@@ -17,7 +17,7 @@ export const DifficultyLevels = {
 };
 
 export const PointTotals = {
-  [DifficultyLevels.EASY]: 50,
+  [DifficultyLevels.EASY]: 1,
   [DifficultyLevels.MEDIUM]: 40,
   [DifficultyLevels.HARD]: 30
 };
@@ -31,21 +31,22 @@ export const GAME_TITLE = "Marvelous memory maths";
 export const INITIALIZED_MESSAGE = "Select a card to begin.";
 export const NEW_GAME = "New game";
 export const HOW_TO_PLAY = "How to play";
-export const NEW_GAME_MESSAGE = difficulty =>
-  `You have started a new ${difficulty} game.`;
+export const NEW_GAME_MESSAGE = `You have started a new game.`;
 export const MATCH_MESSAGE = (a, b) => `Match! ${a} equals ${b}.`;
 export const NO_MATCH_MESSAGE = (a, b) => `Sorry! ${a} doesn't equal ${b}.`;
-export const GAME_OVER_MESSAGE = "You lost all of your points. Game over.";
+export const GAME_OVER_MESSAGE = "Game over.";
 export const GAME_WON_MESSAGE = points =>
   `Finished! Your final score was ${points}.`;
 export const GAME_EMPTY_MESSAGE = `Waiting for a new game...`;
 export const CANNOT_SELECT_AGAIN = "You cannot select the same card twice.";
-export const PRIME_BUTTON_TEXT = "It's a prime!";
+export const PRIME_BUTTON_TEXT = "Prime";
 export const CARD_WAS_PRIME = value => `Correct! ${value} is indeed prime.`;
 export const CARD_WAS_NOT_PRIME = value => `Whoops! ${value} is not prime.`;
+export const SELECTED_VALUE = value => `Selected ${value}.`;
 
 export const POINTS_FOR_MATCH = 1;
 export const POINTS_FOR_NO_MATCH = 1;
+export const NO_MATCH_TIMEOUT = 1000;
 
 // utils/cards.js
 export const getRandomIndex = array =>
@@ -544,7 +545,7 @@ export default class Game extends React.Component {
   }
 
   componentDidUpdate() {
-    const { grid } = this.state;
+    const { grid, points } = this.state;
 
     if (grid) {
       this.checkIfFinished();
@@ -562,14 +563,25 @@ export default class Game extends React.Component {
       message
     });
 
-  startNewGame = () => this.initialize(NEW_GAME_MESSAGE(this.state.difficulty));
+  startNewGame = () => {
+    this.setState({ grid: null });
+
+    setTimeout(() => {
+      this.initialize(NEW_GAME_MESSAGE);
+    }, NO_MATCH_TIMEOUT);
+  };
 
   showHowToPlay = () => this.setState({ showingHowToPlay: true });
 
   hideHowToPlay = () => this.setState({ showingHowToPlay: false });
 
-  updateDifficulty = ({ target: { value: difficulty } }) =>
-    this.setState({ difficulty });
+  updateDifficulty = difficulty => e => {
+    this.setState({ difficulty, grid: null });
+
+    setTimeout(() => {
+      this.initialize(NEW_GAME_MESSAGE);
+    }, NO_MATCH_TIMEOUT);
+  };
 
   updatePoints = points => this.setState({ points });
 
@@ -622,7 +634,7 @@ export default class Game extends React.Component {
     this.toggleCardVisibility(row, column);
 
     if (!chosenCard) {
-      this.updateMessage(`Selected "${card.expression || card.value}".`);
+      this.updateMessage(SELECTED_VALUE(card.expression || card.value));
       return this.setState({ chosenCard: [row, column] });
     }
 
@@ -643,8 +655,14 @@ export default class Game extends React.Component {
     } else {
       this.showNoMatchMessage(card.value, toCompare.value);
       this.updatePoints(points - POINTS_FOR_NO_MATCH);
-      this.toggleCardVisibility(row, column);
-      this.toggleCardVisibility(toCompareRow, toCompareColumn);
+      setTimeout(() => {
+        const { grid } = this.state;
+
+        if (grid) {
+          this.toggleCardVisibility(row, column);
+          this.toggleCardVisibility(toCompareRow, toCompareColumn);
+        }
+      }, NO_MATCH_TIMEOUT);
     }
 
     this.clearChosenCard();
@@ -688,88 +706,83 @@ export default class Game extends React.Component {
   render() {
     const { difficulty, grid, points, message, chosenCard } = this.state;
     const newGameButton = (
-      <button onClick={this.startNewGame}>{NEW_GAME}</button>
+      <button className="Game-button" onClick={this.startNewGame}>
+        {NEW_GAME}
+      </button>
     );
 
     return (
       <section className="Game">
         <section className="Game-header">
           <nav className="Game-options">
-            <fieldset className="Game-options-difficulty">
-              <label htmlFor="difficulty">
-                <input
-                  type="radio"
-                  name="difficulty"
-                  value={DifficultyLevels.EASY}
-                  checked={difficulty === DifficultyLevels.EASY}
-                  onChange={this.updateDifficulty}
-                />
+            <section className="Game-difficulty">
+              <button
+                className="Game-difficulty-option"
+                onClick={this.updateDifficulty(DifficultyLevels.EASY)}
+                disabled={difficulty === DifficultyLevels.EASY}
+              >
                 {DifficultyLevels.EASY}
-              </label>
-              <label htmlFor="difficulty">
-                <input
-                  type="radio"
-                  name="difficulty"
-                  value={DifficultyLevels.MEDIUM}
-                  checked={difficulty === DifficultyLevels.MEDIUM}
-                  onChange={this.updateDifficulty}
-                />
+              </button>
+              <button
+                className="Game-difficulty-option"
+                onClick={this.updateDifficulty(DifficultyLevels.MEDIUM)}
+                disabled={difficulty === DifficultyLevels.MEDIUM}
+              >
                 {DifficultyLevels.MEDIUM}
-              </label>
-              <label htmlFor="difficulty">
-                <input
-                  type="radio"
-                  name="difficulty"
-                  value={DifficultyLevels.HARD}
-                  checked={difficulty === DifficultyLevels.HARD}
-                  onChange={this.updateDifficulty}
-                />
+              </button>
+              <button
+                className="Game-difficulty-option"
+                onClick={this.updateDifficulty(DifficultyLevels.HARD)}
+                disabled={difficulty === DifficultyLevels.HARD}
+              >
                 {DifficultyLevels.HARD}
-              </label>
-            </fieldset>
-            <section className="Game-options-buttons">
-              {newGameButton}
-              <button onClick={this.showHowToPlay}>{HOW_TO_PLAY}</button>
+              </button>
             </section>
           </nav>
-          <h1>{GAME_TITLE}</h1>
+          <h1 className="Game-title">{GAME_TITLE}</h1>
+          <section className="Game-options-buttons">
+            {newGameButton}
+            <button className="Game-button" onClick={this.showHowToPlay}>
+              {HOW_TO_PLAY}
+            </button>
+          </section>
           <section className="Game-subheader">
             <section className="Game-points">{points}</section>
-            <section className="Game-message">
-              <p>{message}</p>
-            </section>
+            <p className="Game-message">{message}</p>
           </section>
         </section>
-        <section className="Game-grid">
-          {grid ? (
-            grid.map((row, rowIndex) => (
-              <section key={rowIndex} className="Game-grid-row">
-                {row.map((card, columnIndex) => (
-                  <section key={columnIndex} className="Game-grid-column">
-                    <Card
-                      {...card}
-                      onClick={this.chooseCard(rowIndex, columnIndex)}
-                    />
-                  </section>
-                ))}
+        <section className="Game-grid-wrapper">
+          <section className="Game-grid">
+            {grid ? (
+              grid.map((row, rowIndex) => (
+                <section key={rowIndex} className="Game-grid-row">
+                  {row.map((card, columnIndex) => (
+                    <section key={columnIndex} className="Game-grid-column">
+                      <Card
+                        {...card}
+                        onClick={this.chooseCard(rowIndex, columnIndex)}
+                      />
+                    </section>
+                  ))}
+                </section>
+              ))
+            ) : (
+              <section className="Game-empty">
+                {GAME_EMPTY_MESSAGE}
+                {newGameButton}
               </section>
-            ))
-          ) : (
-            <section className="Game-empty">
-              {GAME_EMPTY_MESSAGE}
-              {newGameButton}
-            </section>
+            )}
+          </section>
+          {grid && (
+            <button
+              onClick={this.claimPrime}
+              className="Game-grid-prime"
+              disabled={!chosenCard}
+            >
+              {PRIME_BUTTON_TEXT}
+            </button>
           )}
         </section>
-        {grid && (
-          <button
-            onClick={this.claimPrime}
-            className="Game-grid-prime"
-            disabled={!chosenCard}
-          >
-            {PRIME_BUTTON_TEXT}
-          </button>
-        )}
       </section>
     );
   }
