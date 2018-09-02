@@ -1,0 +1,21 @@
+.Card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 8rem;
+  height: 8rem;
+  margin: 0.2rem;
+  background: red;
+  border: 1px solid;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.Card-visible {
+  background: white;
+}
+
+.Card-done {
+  background: mediumaquamarine;
+  border: aquamarine;
+}
