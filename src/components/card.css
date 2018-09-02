@@ -12,6 +12,20 @@
   cursor: pointer;
 }
 
+@media (min-width: 500px) {
+  .Card {
+    width: 5rem;
+    height: 5rem;
+  }
+}
+
+@media (min-width: 1000px) {
+  .Card {
+    width: 8rem;
+    height: 8rem;
+  }
+}
+
 .Card-visible {
   background: white;
 }
